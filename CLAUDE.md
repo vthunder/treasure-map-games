@@ -23,9 +23,10 @@ Groups of 10–12 kids visit for ~8 minutes. They play the demo level, brainstor
 - Finish with:
   1. `tools/check.sh demo,<your level id>` (≈2–4 s; plain `tools/check.sh` = every level, ≈14 s)
   2. If you drew pictures or changed the look: `tools/look.sh --pictures a,b,c` or
-     `LOOK_SIZE=1280x720 tools/look.sh <level id>` (projector size; gives intro.png,
-     question.png = first question, chest.png = just after the chest opens) and glance at the
-     PNGs; redraw anything that doesn't read clearly.
+     `LOOK_SIZE=1280x720 tools/look.sh <level id>` (projector size, light color scheme; gives
+     intro.png, map.png = map at the first stop, question.png, chest.png = just after the chest
+     opens; `LOOK_SCHEME=dark` for dark mode) and glance at the PNGs; redraw anything that
+     doesn't read clearly.
   3. `tools/group.sh save "<what changed>"` (saves on the current branch; `tools/group.sh where`
      shows it).
   4. One or two plain sentences on what changed and how to play it.
@@ -43,20 +44,21 @@ group starts by playing it. If the kids' idea changes the demo itself, keep it p
 | `js/util.js` | `$(id)`, `wait(ms)`, `show(id, on)` (toggles the `hidden` attribute, so never give a toggled element a CSS `display`), `shuffle(a)`, `reduced` |
 | `js/config.js` | `CONFIG`: `levels`, `rounds` (default stops, 10), `text` (all journey/treasure wording), `keys` (10 colors), `path` (START + 10 stops), `decor`, `timing`, `speechRate` |
 | `js/words.js` | `WORDS[listName]`: flat list (target + 2 random wrong pictures) or list of 3-word groups (all 3 shown) |
-| `js/images.js` | `IMG[word]` = SVG string; `DECOR[name]` = map scenery (separate from IMG, e.g. `volcano` is only in DECOR); `keySVG(color)` |
+| `js/images.js` | `IMG[word]` = SVG string; `DECOR[name]` = map scenery, 40×40 (compass mountain palm crab cactus volcano wave sailboat; separate from IMG); `keySVG(color)` |
 | `js/audio.js` | `say(text)` speech, `tone(freqs, type, vol)`, `happy()`, `oops()`, `fanfare()`, `jingle(n)` |
 | `js/fx.js` | `burst(n)` confetti, `coinRain(n)` |
-| `js/map.js` | `setSteps(n)` redraws the map for n stops, `buildMap()`, `walk(k)`, `markCurrent/markDone`, key bag `buildSlots/fillSlot`, `activeKeys()`, `chestInner()` |
+| `js/map.js` | `setSteps(n, map)` redraws the map for n stops (and a level's map look), `buildMap()`, `walk(k)`, `markCurrent/markDone`, key bag `buildSlots/fillSlot`, `activeKeys()`, `chestInner()` |
 | `js/game.js` | Flow: `levelOf(id)`, `T(key, vars)`, `spoken(r)`, `answerOf(r)`, `buildRounds`, `buildLevelButtons`, `startJourney`, `nextStop`, `renderRound`, `pick`, `celebrate`, `finale`, `goHome` |
 | `css/style.css` | One-line rules. Colors: `--bg --surface --ink --muted --good --goodSoft --off --line --sun --sand --water1 --water2` (light + dark versions in `:root`) |
 | `tools/` | Event tooling (dev server, check, look, group branches). Don't change it for a game idea. |
 
 Global names already taken (pick different ones for new code): `$ wait reduced show shuffle
 CONFIG WORDS S K IMG IMG_EASY IMG_HARD DECOR keySVG voice pickVoice say ac tone happy oops fanfare
-jingle burst coinRain FULL_PATH PTS STEPS activeKeys setSteps segs segDone stations slotEls segPath
+jingle burst coinRain FULL_PATH PTS STEPS MAP activeKeys setSteps segs segDone stations slotEls segPath
 chestInner decor buildMap buildSlots fillSlot placeHero resetMap markCurrent markDone walk mode
 rounds idx locked LAST levelOf STAR picture T spoken answerOf buildRounds buildLevelButtons
-startJourney nextStop goHome renderRound pick celebrate finale`.
+startJourney nextStop goHome renderRound pick celebrate finale`. New picture objects:
+`IMG_<THEME>` (e.g. `IMG_SPACE`).
 
 ## Screens (`index.html`)
 
@@ -93,8 +95,8 @@ can override any of them with `text: { finWin: "You found the giant bone!" }`.
 
 `CONFIG.levels` entries: `id`, `name`, `stars`, `icon` (an `IMG` key, or an emoji/short text
 like `"123"`), `blurb`, optional `steps` (stops, max 10), `words` (list name, default = id),
-`text` (wording overrides), `makeRounds(n)` (build questions in code), `hidden: true` (no
-button). Any other field you invent is fine too (e.g. `timer: 10`, `sounds: {...}`): read it
+`text` (wording overrides), `makeRounds(n)` (build questions in code), `map` (its own map
+look, see recipe), `hidden: true` (no button). Any other field you invent is fine too (e.g. `timer: 10`, `sounds: {...}`): read it
 with `levelOf(mode).yourField` so only that level changes. Levels now: `demo` (3 stops, uses the `hard` list), `easy`, `medium`, `hard` (10 stops
 each). Button order = array order. **Card space:** the 4 buttons already fill the card on a
 720p screen; when adding a level, hide `easy` (then `medium`, then `hard`) with `hidden: true`,
@@ -159,6 +161,14 @@ big curved claw on a toe). Always look at new pictures with `tools/look.sh --pic
   bottom-center on the path (`.hero` uses `translate(-50%,-92%)`); `.flipper` mirrors it to face
   the walking direction, so draw it facing right. Map art: `buildMap()`; scenery: `CONFIG.decor`
   + `DECOR` (40×40); colors: `:root` variables (both light and dark blocks).
+- **A level with its own map** (space, underwater, candy land...): give the level
+  `map: { name: "space", background: '<rect width="400" height="560" fill="#14213D"/>...',
+  decor: [["ringed", 56, 106, 1.1], ...] }`. `background` is SVG for the 400×560 box (replaces
+  the parchment; keep it simple: a fill, a few big shapes, maybe a loop of small stars); `decor`
+  replaces `CONFIG.decor` (names from `DECOR`; add new 40×40 ones to `DECOR`). `#mapwrap` gets
+  `data-map="space"`, so recolor with CSS: `.mapwrap[data-map="space"] #mapsvg .seg{stroke:#9EC9FF}`,
+  `... .maplabel` (START), `... .mapx` (the X), `... #mapsvg .station .dot`. The intro screen
+  always shows the normal map. Use `tools/look.sh <id>` → map.png to check it.
 - **Change the treasure**: art in `chestInner()` (`js/map.js`, used on the map X and in the
   finale): a 160-wide box, body from y≈62 down, contents (coins) sit at y≈40–62, `.lid` (y≈14–66)
   hides them until `.finale.open`, gold straps are drawn after the contents. Words: `CONFIG.text`.

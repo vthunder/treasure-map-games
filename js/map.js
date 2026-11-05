@@ -4,8 +4,13 @@ let PTS = FULL_PATH, STEPS = CONFIG.rounds;
 const activeKeys = () => CONFIG.keys.slice(0, STEPS);
 
 /* Re-draw the map for a game with n stops (picks n evenly spaced points; the last is always the chest). */
-function setSteps(n){
-  STEPS = n;
+/* The playing level's map look (level.map), {} = the normal parchment map. Fields:
+   name (sets data-map on #mapwrap for CSS: [data-map="space"] .seg{...}),
+   background (SVG for the 400x560 box, replaces the parchment), decor (replaces CONFIG.decor). */
+let MAP = {};
+function setSteps(n, map){
+  STEPS = n; MAP = map || {};
+  $("mapwrap").dataset.map = MAP.name || "";
   const total = FULL_PATH.length - 1;
   PTS = [FULL_PATH[0]];
   for(let k = 1; k <= n; k++) PTS.push(FULL_PATH[Math.round(k * total / n)]);
@@ -41,12 +46,12 @@ function decor(name, x, y, s){
 
 function buildMap(){
   const last = PTS.length - 1, chest = PTS[last];
-  let s = `<rect width="400" height="560" fill="#E6CB8C"/>
+  let s = MAP.background || `<rect width="400" height="560" fill="#E6CB8C"/>
     <rect x="6" y="6" width="388" height="548" rx="14" fill="none" stroke="#B98B4A" stroke-width="3" stroke-dasharray="10 6" opacity=".6"/>
     <path d="M26 66Q58 22 200 30T378 72Q394 220 374 300T382 498Q300 548 180 541T24 520Q6 300 26 66Z" fill="#F6E7BF" stroke="#B98B4A" stroke-width="4" stroke-dasharray="2 7" stroke-linecap="round"/>
     <g fill="#BFD58A" opacity=".65"><ellipse cx="90" cy="150" rx="46" ry="26"/><ellipse cx="330" cy="260" rx="38" ry="30"/><ellipse cx="190" cy="320" rx="44" ry="22"/><ellipse cx="60" cy="460" rx="30" ry="22"/></g>`;
-  CONFIG.decor.forEach(d => { s += decor(d[0], d[1], d[2], d[3]); });
-  s += `<text x="40" y="548" font-size="12" font-weight="700" fill="#7A4A1E" text-anchor="middle" font-family="Andika,sans-serif">START</text>`;
+  (MAP.decor || CONFIG.decor).forEach(d => { s += decor(d[0], d[1], d[2], d[3]); });
+  s += `<text class="maplabel" x="40" y="548" font-size="12" font-weight="700" fill="#7A4A1E" text-anchor="middle" font-family="Andika,sans-serif">START</text>`;
   for(let i = 0; i < last; i++) s += `<path class="seg" d="${segPath(i)}"/>`;
   for(let i = 0; i < last; i++) s += `<path class="segdone" pathLength="1" d="${segPath(i)}"/>`;
   for(let i = 1; i < last; i++){
@@ -55,7 +60,7 @@ function buildMap(){
   }
   s += `<circle class="ring10" cx="${chest[0]}" cy="${chest[1] - 10}" r="36"/>
     <g transform="translate(${chest[0]} ${chest[1] + 18}) scale(.46) translate(-80 -124)">${chestInner()}</g>
-    <text x="${chest[0]}" y="${chest[1] + 36}" font-size="22" font-weight="700" fill="#B3412E" text-anchor="middle" font-family="Andika,sans-serif">X</text>`;
+    <text x="${chest[0]}" y="${chest[1] + 36}" font-size="22" font-weight="700" class="mapx" fill="#B3412E" text-anchor="middle" font-family="Andika,sans-serif">X</text>`;
   $("mapsvg").innerHTML = s;
   const q = sel => [...$("mapsvg").querySelectorAll(sel)];
   segs = q(".seg"); segDone = q(".segdone"); stations = q(".station");

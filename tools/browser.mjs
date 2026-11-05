@@ -14,7 +14,7 @@ const freePort = () => new Promise(res => { const s = createServer(); s.listen(0
 
 export function fail(msg) { console.log("FAIL: " + msg); process.exit(1); }
 
-export async function openBrowser({ width = 800, height = 900 } = {}) {
+export async function openBrowser({ width = 800, height = 900, scheme = "light" } = {}) {
   if (!existsSync(CHROME)) { console.log("Chrome not found at " + CHROME + " (set CHROME=...)"); process.exit(2); }
   const port = await freePort();
   const prof = mkdtempSync(join(tmpdir(), "wtm-"));
@@ -46,6 +46,7 @@ export async function openBrowser({ width = 800, height = 900 } = {}) {
   const evaluate = async expr => (await send("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: true })).result?.result?.value;
   await send("Page.enable");
   await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
+  await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: scheme }] });
   return {
     base: `http://127.0.0.1:${port}`,
     send, evaluate,

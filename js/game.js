@@ -48,7 +48,7 @@ function buildLevelButtons(){
 
 function startJourney(m){
   mode = m;
-  setSteps(levelOf(m).steps || CONFIG.rounds);
+  setSteps(levelOf(m).steps || CONFIG.rounds, levelOf(m).map);
   LAST = STEPS - 1;
   rounds = buildRounds(m); idx = -1;
   show("intro", false); show("topbar", true); show("finale", false);

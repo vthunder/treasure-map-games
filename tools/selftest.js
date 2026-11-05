@@ -113,7 +113,13 @@
       const lv = levelList([id])[0];
       if (!lv) throw new Error("no level with id " + id);
       await playLevel(lv, { stops: 0, labels: [] }, {
-        firstQuestion: async () => { await sleep(500); document.title = "LOOK question"; await until(() => window.__lookGo2, 60000); }
+        firstQuestion: async () => {
+          await sleep(500);
+          el("quiz").hidden = true; await sleep(100);
+          document.title = "LOOK map"; await until(() => window.__lookGoMap, 60000);
+          el("quiz").hidden = false; await sleep(100);
+          document.title = "LOOK question"; await until(() => window.__lookGo2, 60000);
+        }
       });
       await sleep(900);
       document.title = "LOOK chest";
