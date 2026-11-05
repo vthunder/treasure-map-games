@@ -14,7 +14,8 @@ const spoken = r => r.speak ?? r.target[0];
 const answerOf = r => r.answer ?? r.target[0];
 
 /* ---------- Building the questions ----------
-   A round: { target: [label, html], options: [[label, html], ...], answer?, speak? }.
+   A round: { target: [label, html], options: [[label, html], ...], answer?, speak?, pic?, choiceLabel? }.
+   pic = SVG/HTML shown above the prompt; choiceLabel = screen-reader label for the choice buttons.
    target[0] is the big prompt text; each option's html goes in a choice button; the option whose
    label equals answerOf(round) is right; spoken(round) is what Hear it says. */
 function buildRounds(m){
@@ -79,12 +80,14 @@ function renderRound(){
   locked = false;
   const r = rounds[idx];
   $("word").textContent = r.target[0];
+  $("qpic").innerHTML = r.pic || ""; show("qpic", !!r.pic);   // optional picture above the prompt
   $("stlabel").textContent = idx === LAST ? T("chestStop") : T("stop", { i: idx + 1 });
   const box = $("choices"); box.innerHTML = "";
+  box.style.gridTemplateColumns = `repeat(${Math.min(r.options.length, 4)}, 1fr)`;
   r.options.forEach(opt => {
     const b = document.createElement("button");
     b.className = "choice"; b.innerHTML = opt[1];
-    b.setAttribute("aria-label", "Picture choice");
+    b.setAttribute("aria-label", r.choiceLabel || "Picture choice");
     b.addEventListener("click", () => pick(b, opt));
     box.appendChild(b);
   });

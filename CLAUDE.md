@@ -11,7 +11,10 @@ Groups of 10–12 kids visit for ~8 minutes. They play the demo level, brainstor
 
 - Make the smallest change that delivers the kids' idea. Edit directly; don't refactor
   unrelated code, don't explain at length. This file tells you where things are, so don't explore.
-- Never read `js/images.js` whole (40+ KB of SVG); grep for what you need.
+- Never read `js/images.js` whole (40+ KB of SVG); grep for what you need. To read one
+  function: `grep -n "function finale" js/game.js`, then Read that range.
+- Keep shell commands simple (one action each, no nested `$(...)` or giant heredocs); use the
+  Edit tool for code changes. Complicated commands can get blocked and cost round trips.
 - Big ideas ("make it Minecraft", "online multiplayer") → build a small, playable version.
 - The game on the projector reloads by itself on every save, so the kids see changes appear.
 - **Don't drive the Browser pane** (it may be what the kids are watching, and it's slow). To
@@ -20,7 +23,9 @@ Groups of 10–12 kids visit for ~8 minutes. They play the demo level, brainstor
 - Finish with:
   1. `tools/check.sh demo,<your level id>` (≈2–4 s; plain `tools/check.sh` = every level, ≈14 s)
   2. If you drew pictures or changed the look: `tools/look.sh --pictures a,b,c` or
-     `tools/look.sh <level id>` and glance at the PNGs; redraw anything that doesn't read clearly.
+     `LOOK_SIZE=1280x720 tools/look.sh <level id>` (projector size; gives intro.png,
+     question.png = first question, chest.png = just after the chest opens) and glance at the
+     PNGs; redraw anything that doesn't read clearly.
   3. `tools/group.sh save "<what changed>"` (saves on the current branch; `tools/group.sh where`
      shows it).
   4. One or two plain sentences on what changed and how to play it.
@@ -72,12 +77,13 @@ hidden) → `pick(btn, opt)`: right → `celebrate(idx)` (key flies to the bag) 
 stop → `finale()` (try keys, chest opens, coins) → `#againBtn` / `#levelsBtn`. `goHome()`
 cancels speech, hides overlays, resets the map. `levelOf(mode)` = the level being played.
 
-A round is `{ target: [label, html], options: [[label, html], ...], answer?, speak? }`.
-`renderRound` shows `target[0]` as the big prompt (only `target[0]` is used) and puts each
-option's `html` in a `.choice` button. Right option: label `=== answerOf(r)` (`r.answer`, else
+A round is `{ target: [label, html], options: [[label, html], ...], answer?, speak?, pic?,
+choiceLabel? }`. `renderRound` shows `target[0]` as the big prompt (only `target[0]` is used),
+`pic` (SVG/HTML, e.g. `IMG.cat`) in `#qpic` above it, and each option's `html` in a `.choice`
+button; the grid gets one column per option (3 or 4 fit in a row). Right option: label `=== answerOf(r)` (`r.answer`, else
 `target[0]`). Hear it, tapping the word, and the right-answer voice all say `spoken(r)`
-(`r.speak`, else `target[0]`). Choice buttons have `aria-label="Picture choice"`; change it if
-the choices aren't pictures.
+(`r.speak`, else `target[0]`). Choice buttons get `aria-label` = `r.choiceLabel`, default
+"Picture choice".
 
 All on-screen journey/treasure wording comes from `CONFIG.text` via `T(key, {i})`: `stop`,
 `chestStop`, `finPrompt`, `finRetry`, `finFits`, `finWin`, `finLead` (`{n}` = stops). A level
@@ -88,10 +94,11 @@ can override any of them with `text: { finWin: "You found the giant bone!" }`.
 `CONFIG.levels` entries: `id`, `name`, `stars`, `icon` (an `IMG` key, or an emoji/short text
 like `"123"`), `blurb`, optional `steps` (stops, max 10), `words` (list name, default = id),
 `text` (wording overrides), `makeRounds(n)` (build questions in code), `hidden: true` (no
-button). Levels now: `demo` (3 stops, uses the `hard` list), `easy`, `medium`, `hard` (10 stops
+button). Any other field you invent is fine too (e.g. `timer: 10`, `sounds: {...}`): read it
+with `levelOf(mode).yourField` so only that level changes. Levels now: `demo` (3 stops, uses the `hard` list), `easy`, `medium`, `hard` (10 stops
 each). Button order = array order. **Card space:** the 4 buttons already fill the card on a
-720p screen; when adding a level, hide one or more of easy/medium/hard (`hidden: true`) unless
-the facilitator says otherwise. Each word in a list is used at most once per game.
+720p screen; when adding a level, hide `easy` (then `medium`, then `hard`) with `hidden: true`,
+unless the facilitator says otherwise. Each word in a list is used at most once per game.
 
 ## Pictures
 
@@ -118,14 +125,25 @@ big curved claw on a toe). Always look at new pictures with `tools/look.sh --pic
 
 ## Recipes
 
-- **New level with new words**: list in `WORDS`, an `IMG` entry for every word, a
-  `CONFIG.levels` entry with `steps: 3`–`5`. Flat list: ≥ `steps` words and ≥ 3. Group list:
+- **New level with new words**: list in `WORDS`, an `IMG` entry for every word (reuse
+  existing ones when you can), a `CONFIG.levels` entry with `steps: 3`–`5` ("longer" = 6). Flat list: ≥ `steps` words and ≥ 3. Group list:
   ≥ `steps` groups.
 - **Questions made in code** (math "2 + 3", rhymes, missing letter "c_t", counting): give the
   level `makeRounds(n)` returning n rounds, each with `target: ["2 + 3"]`, `answer: "5"`,
   `speak: "2 plus 3"`, `options: [["5", '<span class="num">5</span>'], ...]` (add a CSS rule
   for `.choice .num`, e.g. big bold `var(--ink)`). No `WORDS`/`IMG` needed. Set
-  `text: { finLead: "You solved {n} problems!" }` and a text `icon`.
+  `text: { finLead: "You solved {n} problems!" }` and a text `icon`. For "look at the picture"
+  questions put the picture in `pic`. Make sure wrong answers are really wrong (for c_t, "o" and
+  "u" make real words too).
+- **More pictures per stop**: use 4-word groups in `WORDS`; the grid sizes itself.
+- **Something extra on a right answer** (sound, animation, message): add it in `pick()` in the
+  right-answer branch. Timeline: `say(spoken(r))` at 250 ms, celebration at
+  `CONFIG.timing.afterCorrectMs` (1300 ms). Animal noises etc. can only be spoken by `say()`
+  (there are no sound files); `tone()` makes beeps.
+- **Music / looping effects**: `tone([f1, f2, ...], type, vol)` plays the notes one after
+  another, 0.12 s apart (not a chord); loop with `setInterval`. Anything that keeps running
+  (music, timers, intervals, classes like a dance mode) must be stopped in both `goHome()` and
+  `startJourney()`. "Chest opened" = right after `fanfare()` in `finale()`.
 - **Timer**: add a per-level option (e.g. `timer: 10`) read with `levelOf(mode).timer`, so other
   levels are unaffected. Start it at the end of `renderRound`; stop it on a right answer and in
   `goHome`. Running out = gentle: `oops()`, a "Time's up! Try again!" message, restart. Guard
@@ -136,7 +154,8 @@ big curved claw on a toe). Always look at new pictures with `tools/look.sh --pic
   last stop) and give the result with `$("finWin")` / `$("finLead")` in `finale()`. **Use an
   even number of stops** (e.g. `steps: 4`) so teams get equal turns; the demo has 3. Write
   "1 point" vs "2 points".
-- **Change the look**: hero SVG in `index.html` `#hero` is a 44×58 viewBox, anchored at its
+- **Change the look**: overlays (`#quiz`, `#cel`, `#finale`, `#fx`) sit outside `#mapwrap`,
+  so the map can be animated or transformed safely. Hero SVG in `index.html` `#hero` is a 44×58 viewBox, anchored at its
   bottom-center on the path (`.hero` uses `translate(-50%,-92%)`); `.flipper` mirrors it to face
   the walking direction, so draw it facing right. Map art: `buildMap()`; scenery: `CONFIG.decor`
   + `DECOR` (40×40); colors: `:root` variables (both light and dark blocks).
@@ -153,6 +172,8 @@ big curved claw on a toe). Always look at new pictures with `tools/look.sh --pic
   `.levels button[data-level]`. It only checks that the game plays through, not that a new
   feature works or looks right. If a change needs a different flow (e.g. typing answers),
   update `tools/selftest.js` to match.
+- `@media (prefers-reduced-motion: reduce)` in the CSS turns off animations for people who
+  ask for that; don't fight it.
 - The `?v=` on script/CSS tags is leftover cache-busting; the dev server sends no-cache, so
   don't bother bumping it.
 

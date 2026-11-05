@@ -4,9 +4,9 @@
 
    * A flat list of words  -> each round picks a target and 2 random
                               other words from the list as wrong answers.
-   * A list of groups      -> each round picks one group; all 3 words in
-                              the group are the choices (so choose
-                              look-alike words to make it harder).
+   * A list of groups      -> each round picks one group; all words in
+                              the group are the choices (3 usually; 4 works
+                              too). Choose look-alike words to make it harder.
    ========================================================== */
 const WORDS = {
   easy: [
