@@ -7,13 +7,28 @@ const CONFIG = {
 
   /* Level buttons on the opening screen. `icon` is a name from IMG (images.js). */
   /* Optional per-level settings: `steps` = number of stops/keys (default = rounds),
-     `words` = which list in words.js to use (default = the level id). */
+     `words` = which list in words.js to use (default = the level id),
+     `text` = overrides for CONFIG.text, `makeRounds(n)` = build the questions in code instead of
+     from words.js (see buildRounds in game.js). `icon` may also be an emoji or short text,
+     `hidden: true` = keep the level but leave its button off the card. */
   levels: [
     { id: "demo",   name: "Level 0: Demo",   stars: 0, icon: "penguin", steps: 3, words: "hard", blurb: "Just 3 stops, with Level 3 words" },
     { id: "easy",   name: "Level 1: Easy",   stars: 1, icon: "cat",    blurb: "Short words: cat, dog, sun" },
     { id: "medium", name: "Level 2: Medium", stars: 2, icon: "cloud",  blurb: "Blends & digraphs: cloud, sheep, train" },
     { id: "hard",   name: "Level 3: Hard",   stars: 3, icon: "dragon", blurb: "Big words: elephant, giraffe, penguin" }
   ],
+
+  /* Words around the journey and the treasure. A level can override any of them with its own
+     `text: { ... }`. {i} = stop number, {n} = number of stops. */
+  text: {
+    stop: "Stop {i} of {n}",
+    chestStop: "The treasure chest!",
+    finPrompt: "Which key opens the chest? Try them!",
+    finRetry: "Not that one! Try another key.",
+    finFits: "Click! The key fits!",
+    finWin: "You found the treasure!",
+    finLead: "You read {n} words all by yourself."
+  },
 
   /* One key is won per stop. Add/remove colors to change the number of keys
      (keep it equal to `rounds`). */

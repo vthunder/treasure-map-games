@@ -86,7 +86,7 @@ class Handler(SimpleHTTPRequestHandler):
         if url.path == "/__dev/selftest.js":
             return self.send_file(os.path.join(TOOLS, "selftest.js"), "text/javascript")
         if url.path in ("/", "/index.html"):
-            return self.index("selftest" in url.query)
+            return self.index(any(k in url.query for k in ("selftest", "look", "pictures")))
         return super().do_GET()
 
     def send_file(self, path, ctype, body=None):
@@ -102,7 +102,7 @@ class Handler(SimpleHTTPRequestHandler):
     def index(self, selftest):
         with open(os.path.join(ROOT, "index.html"), "rb") as f:
             html = f.read()
-        if selftest:
+        if selftest:  # selftest, look or pictures
             i = html.find(b"<body>")
             html = (html[: i + 6] + SELFTEST_HEAD + html[i + 6 :]) if i >= 0 else SELFTEST_HEAD + html
             tail = b'<script src="/__dev/selftest.js"></script>'
