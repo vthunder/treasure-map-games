@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit(./**)",
+      "Bash(tools/check.sh)",
+      "Bash(tools/check.sh *)",
+      "Bash(tools/look.sh)",
+      "Bash(tools/look.sh *)",
+      "Bash(LOOK_SIZE=1280x720 tools/look.sh *)",
+      "Bash(tools/group.sh *)",
+      "Bash(python3 tools/serve.py *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(grep *)",
+      "Bash(sed -n *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(date *)"
+    ]
+  }
+}
