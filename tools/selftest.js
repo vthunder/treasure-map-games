@@ -57,7 +57,9 @@
         c.click();
         await sleep(40);
         const all = [...el("choices").querySelectorAll("button")];
-        if (!shown(el("quiz")) || all.every(b => b.disabled)) { accepted = true; break; }
+        if (c.classList.contains("yes") || all.every(b => b.disabled) || (!shown(el("quiz")) && !c.classList.contains("no"))) { accepted = true; break; }
+        /* A miss may play a penalty (e.g. the shark) that locks or hides the question: wait it out. */
+        if (c.classList.contains("no")) await until(() => shown(el("quiz")) && !(typeof locked !== "undefined" && locked), 15000);
       }
       if (!accepted) throw new Error(`stop ${r.stops + 1}: tapped every choice but none was accepted`);
       r.stops++;
