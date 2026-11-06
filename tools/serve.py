@@ -4,7 +4,7 @@
     python3 tools/serve.py [--port 8102]
 
 - Every response is sent with Cache-Control: no-store, so edits always show up.
-- index.html gets a tiny reload script injected (the game files themselves stay untouched).
+- Every index.html (landing page, base/, variants/*) gets a tiny reload script injected (the game files themselves stay untouched).
   The page reloads shortly after any file in the game folder changes, including a
   `git switch` to another group's branch.
 - index.html?selftest gets the self-check runner instead (see tools/selftest.js).
@@ -85,8 +85,11 @@ class Handler(SimpleHTTPRequestHandler):
             return self.events()
         if url.path == "/__dev/selftest.js":
             return self.send_file(os.path.join(TOOLS, "selftest.js"), "text/javascript")
-        if url.path in ("/", "/index.html"):
-            return self.index(any(k in url.query for k in ("selftest", "look", "pictures")))
+        if url.path.endswith("/") or url.path.endswith("/index.html"):
+            rel = url.path[1:] + ("index.html" if url.path.endswith("/") else "")
+            full = os.path.normpath(os.path.join(ROOT, rel))
+            if full.startswith(ROOT) and os.path.isfile(full):
+                return self.index(full, any(k in url.query for k in ("selftest", "look", "pictures")))
         return super().do_GET()
 
     def send_file(self, path, ctype, body=None):
@@ -99,8 +102,8 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def index(self, selftest):
-        with open(os.path.join(ROOT, "index.html"), "rb") as f:
+    def index(self, path, selftest):
+        with open(path, "rb") as f:
             html = f.read()
         if selftest:  # selftest, look or pictures
             i = html.find(b"<body>")

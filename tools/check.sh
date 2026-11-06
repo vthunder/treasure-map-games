@@ -3,5 +3,6 @@
 # and prints PASS or FAIL.
 #   tools/check.sh              every level
 #   tools/check.sh demo,space   only these level ids
+# GAME=variants/<name> tools/check.sh checks a variant instead of base/.
 # Starts its own temporary server, so it works whether or not the dev server is running.
 cd "$(dirname "$0")/.." && exec node tools/check.mjs "$@"

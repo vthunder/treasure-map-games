@@ -1,0 +1,116 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta charset="utf-8">
+<title>Word Treasure Map</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=5">
+
+<!-- ============ The map screen (always visible) ============ -->
+<div class="app">
+  <header class="topbar" id="topbar" hidden>
+    <button class="home" id="homeBtn" aria-label="Back to levels">&larr; Levels</button>
+    <div class="bag" aria-label="Your keys">
+      <svg class="bagicon" viewBox="0 0 40 44" aria-hidden="true"><path d="M12 10q0-8 8-8t8 8" fill="none" stroke="#8B4A22" stroke-width="4"/><rect x="5" y="9" width="30" height="32" rx="9" fill="#C8693A" stroke="#7A3F1E" stroke-width="3"/><rect x="11" y="24" width="18" height="12" rx="4" fill="#E0834E" stroke="#7A3F1E" stroke-width="2"/><path d="M11 24h18" stroke="#7A3F1E" stroke-width="2"/></svg>
+      <div class="slots" id="slots"></div>
+    </div>
+  </header>
+
+  <div class="mapwrap" id="mapwrap">
+    <svg id="mapsvg" viewBox="0 0 400 560" role="img" aria-label="Treasure map with ten stops"></svg>
+
+    <div class="buddy" id="buddy0" aria-hidden="true" hidden></div>
+    <div class="buddy" id="buddy1" aria-hidden="true" hidden></div>
+    <div class="hero" id="hero" aria-hidden="true">
+      <div class="flipper" id="flipper">
+        <svg viewBox="0 0 44 58">
+          <rect x="13" y="38" width="7" height="14" fill="#3B2A5A"/><rect x="24" y="38" width="7" height="14" fill="#3B2A5A"/>
+          <rect x="10" y="50" width="11" height="6" rx="3" fill="#4E2810"/><rect x="23" y="50" width="11" height="6" rx="3" fill="#4E2810"/>
+          <rect x="10" y="22" width="24" height="20" rx="6" fill="#E0483E"/>
+          <path d="M10 29h24M10 36h24" stroke="#fff" stroke-width="3"/>
+          <rect x="3" y="24" width="8" height="15" rx="4" fill="#FFE0BD"/><rect x="33" y="24" width="8" height="15" rx="4" fill="#FFE0BD"/>
+          <circle cx="22" cy="14" r="11" fill="#FFE0BD"/>
+          <path d="M11 11Q22 0 33 11V15H11z" fill="#2B5C9E"/><path d="M32 12l9-3-2 8z" fill="#2B5C9E"/>
+          <circle cx="18" cy="17" r="1.9" fill="#16385A"/><circle cx="27" cy="17" r="1.9" fill="#16385A"/>
+          <path d="M18 21q4 3 8 0" fill="none" stroke="#B3412E" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Opening card: level buttons are added by game.js from CONFIG.levels -->
+    <div class="intro" id="intro">
+      <h1 class="title">
+        <svg class="titleicon" viewBox="0 0 48 40" aria-hidden="true"><path d="M2 8l14-6 16 6 14-6v30l-14 6-16-6-14 6z" fill="#F6E7BF" stroke="#8B4A22" stroke-width="3" stroke-linejoin="round"/><path d="M16 2v30M32 8v30" stroke="#8B4A22" stroke-width="2"/><path d="M8 26q6-10 12-4t14-6" fill="none" stroke="#B3412E" stroke-width="2.5" stroke-dasharray="3 3"/><path d="M36 22l6 8M42 22l-6 8" stroke="#B3412E" stroke-width="3" stroke-linecap="round"/></svg>
+        Treasure Map
+      </h1>
+      <p class="lead">Read the word. Find the picture. Win the keys!</p>
+      <div class="levels"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ A reading question ============ -->
+<div class="overlay" id="quiz" hidden>
+  <div class="card">
+    <div class="qtop">
+      <button class="home" id="qHome" aria-label="Back to levels">&larr; Levels</button>
+      <span class="count" id="stlabel">Stop 1 of 10</span>
+    </div>
+    <div class="wordbox">
+      <div class="qpic" id="qpic" hidden></div>
+      <button class="word" id="word" aria-label="Hear the word">cat</button>
+      <button class="hear" id="hear">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9z" fill="currentColor"/><path d="M15 8q4 4 0 8M18 5q7 7 0 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Hear it
+      </button>
+    </div>
+    <div class="choices" id="choices"></div>
+    <div class="buddyrow" id="buddyrow" hidden>
+      <div class="bud"><span class="bubble" id="bub0"></span><span class="budpic" id="budpic0"></span></div>
+      <div class="bud"><span class="bubble" id="bub1"></span><span class="budpic" id="budpic1"></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ "You found a key!" moment ============ -->
+<div class="overlay" id="cel" hidden>
+  <div class="rays"></div>
+  <div class="celbox">
+    <div id="celFly"><div class="celitem" id="celItem"></div></div>
+    <p class="cap" id="celCap"></p>
+  </div>
+</div>
+
+<!-- ============ Final: choose the key, open the chest ============ -->
+<div class="overlay finale" id="finale" hidden>
+  <div class="rays"></div>
+  <div class="finbox">
+    <div class="chestbig" id="chestBig"></div>
+    <p class="cap" id="finPrompt" hidden></p>
+    <div class="keys" id="keys" hidden></div>
+    <div id="finText" hidden>
+      <p class="big" id="finWin">You found the treasure!</p>
+      <p class="lead light" id="finLead">You read 10 words all by yourself.</p>
+    </div>
+    <div class="actions" id="finActions" hidden>
+      <button class="btn main" id="againBtn">Play again</button>
+      <button class="btn alt" id="levelsBtn">Pick another level</button>
+    </div>
+  </div>
+</div>
+
+<div id="fx" aria-hidden="true"></div>
+
+<!-- Scripts: order matters (each file uses the ones above it) -->
+<script src="js/util.js?v=4"></script>
+<script src="js/config.js?v=4"></script>
+<script src="js/words.js?v=4"></script>
+<script src="js/images.js?v=4"></script>
+<script src="js/audio.js?v=4"></script>
+<script src="js/fx.js?v=4"></script>
+<script src="js/map.js?v=4"></script>
+<script src="js/game.js?v=4"></script>
+
+<script src="../../shared/back.js" data-home="../../"></script>
+</body></html>

@@ -1,0 +1,185 @@
+/* Game flow: pick a level -> walk to a stop -> answer -> win a key -> ... -> chest finale. */
+let mode = "easy", rounds = [], idx = 0, locked = false;
+let LAST = CONFIG.rounds - 1;
+const levelOf = id => CONFIG.levels.find(l => l.id === id);
+const STAR = '<svg class="star" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1l2.7 6.2 6.8.6-5.1 4.5 1.5 6.6L10 15.4l-5.9 3.5 1.5-6.6L.5 7.8l6.8-.6z" fill="#F2A900" stroke="#B87A00" stroke-width="1"/></svg>';
+const picture = w => [w, IMG[w]];
+
+/* ---------- Building the questions from words.js ---------- */
+const num = n => [String(n), `<span class="num">${n}</span>`];
+function mathRound(){                                // small sums: a + b, each 1-5
+  const a = 1 + Math.floor(Math.random() * 5), b = 1 + Math.floor(Math.random() * 5), sum = a + b;
+  const wrong = shuffle([sum - 2, sum - 1, sum + 1, sum + 2].filter(n => n >= 1)).slice(0, 2);
+  return { target: [`${a} + ${b}`], answer: String(sum), speak: `${a} plus ${b}`,
+           options: shuffle([sum, ...wrong].map(num)) };
+}
+function buildRounds(m){
+  if(levelOf(m).math) return Array.from({ length: STEPS }, mathRound);
+  const list = WORDS[levelOf(m).words || m];
+  if(Array.isArray(list[0])){                         // groups of look-alike words
+    return shuffle(list.slice()).slice(0, STEPS).map(g => {
+      const pics = g.map(picture);
+      return { target: pics[Math.floor(Math.random() * pics.length)], options: shuffle(pics.slice()) };
+    });
+  }
+  return shuffle(list.slice()).slice(0, STEPS).map(w => {   // flat list: random wrong answers
+    const others = shuffle(list.filter(x => x !== w)).slice(0, 2);
+    return { target: picture(w), options: shuffle([w, ...others].map(picture)) };
+  });
+}
+
+/* ---------- Screens ---------- */
+function buildLevelButtons(){
+  const box = document.querySelector(".levels");
+  CONFIG.levels.forEach(l => {
+    const b = document.createElement("button");
+    b.className = "level";
+    b.innerHTML = `<span class="pic">${IMG[l.icon]}</span><span>${l.name} <span class="stars">${STAR.repeat(l.stars)}</span><small>${l.blurb}</small></span>`;
+    b.addEventListener("click", () => startJourney(l.id));
+    box.appendChild(b);
+  });
+}
+
+function startJourney(m){
+  mode = m;
+  setSteps(levelOf(m).steps || CONFIG.rounds);
+  LAST = STEPS - 1;
+  rounds = buildRounds(m); idx = -1;
+  show("intro", false); show("topbar", true); show("finale", false);
+  $("fx").innerHTML = "";
+  nextStop();
+}
+
+async function nextStop(){
+  idx++;
+  await wait(250);
+  await walk(idx + 1);
+  markCurrent(idx);
+  await wait(250);
+  renderRound();
+  show("quiz", true);
+}
+
+function goHome(){
+  try{ speechSynthesis.cancel(); }catch(e){}
+  ["quiz", "cel", "finale", "topbar"].forEach(id => show(id, false));
+  $("fx").innerHTML = "";
+  setSteps(CONFIG.rounds);
+  show("intro", true);
+  idx = -1;
+}
+
+/* ---------- A question ---------- */
+function renderRound(){
+  locked = false;
+  const r = rounds[idx];
+  $("word").textContent = r.target[0];
+  $("stlabel").textContent = idx === LAST ? "The treasure chest!" : `Stop ${idx + 1} of ${STEPS}`;
+  const box = $("choices"); box.innerHTML = "";
+  r.options.forEach(opt => {
+    const b = document.createElement("button");
+    b.className = "choice"; b.innerHTML = opt[1];
+    b.setAttribute("aria-label", r.answer ? opt[0] : "Picture choice");
+    b.addEventListener("click", () => pick(b, opt));
+    box.appendChild(b);
+  });
+}
+
+function pick(btn, opt){
+  if(locked || btn.disabled) return;
+  const r = rounds[idx];
+  if(opt[0] === (r.answer ?? r.target[0])){
+    locked = true;
+    btn.classList.add("yes");
+    [...$("choices").children].forEach(b => b.disabled = true);
+    happy();
+    setTimeout(() => say(r.answer ? `${r.speak} is ${r.answer}` : r.target[0]), 250);
+    setTimeout(() => { show("quiz", false); celebrate(idx); }, CONFIG.timing.afterCorrectMs);
+  } else {
+    btn.classList.add("no"); btn.disabled = true;
+    oops();
+  }
+}
+
+/* ---------- Winning a key ---------- */
+function celebrate(i){
+  const key = activeKeys()[i], cap = $("celCap");
+  $("celItem").innerHTML = keySVG(key[0]);
+  cap.textContent = i === LAST ? `The ${key[1]} key! That's all ${STEPS} keys!` : `You found the ${key[1]} key!`;
+  cap.style.opacity = "";
+  $("celFly").getAnimations().forEach(a => a.cancel());
+  show("cel", true);
+  fanfare(); burst(34);
+  setTimeout(() => {
+    const item = $("celFly"), slot = slotEls[i];
+    const a = item.getBoundingClientRect(), b = slot.getBoundingClientRect();
+    const dx = (b.left + b.width / 2) - (a.left + a.width / 2), dy = (b.top + b.height / 2) - (a.top + a.height / 2);
+    const sc = Math.max(.1, b.width / a.width);
+    cap.style.opacity = "0";
+    const done = () => {
+      show("cel", false);
+      fillSlot(i);
+      if(i < LAST) markDone(i);
+      tone([880, 1175], "sine", 0.12);
+      if(i < LAST) nextStop(); else finale();
+    };
+    if(reduced){ done(); return; }
+    item.animate([{ transform: "none" }, { transform: `translate(${dx}px,${dy}px) scale(${sc})` }],
+      { duration: 700, easing: "cubic-bezier(.5,0,.8,.4)", fill: "forwards" }).onfinish = done;
+  }, CONFIG.timing.celebrationMs);
+}
+
+/* ---------- Finale: pick the right key, open the chest, coin rain ---------- */
+async function finale(){
+  const f = $("finale"), chest = $("chestBig"), box = $("keys");
+  f.classList.remove("open"); chest.classList.remove("shake");
+  chest.innerHTML = `<svg viewBox="0 -40 160 180" aria-label="Treasure chest">${chestInner()}</svg>`;
+  show("finText", false); show("finActions", false);
+  $("finPrompt").textContent = "Which key opens the chest? Try them!";
+  show("finPrompt", true);
+  box.innerHTML = ""; show("keys", true);
+  box.style.gridTemplateColumns = `repeat(${Math.min(STEPS, 5)}, 1fr)`;
+  $("finLead").textContent = levelOf(mode).math ? `You solved ${STEPS} math problems all by yourself.` : `You read ${STEPS} words all by yourself.`;
+  show("finale", true);
+  document.querySelector(".ring10").classList.remove("cur");
+
+  const winner = Math.floor(Math.random() * STEPS);
+  await new Promise(res => {
+    activeKeys().forEach((k, j) => {
+      const b = document.createElement("button");
+      b.className = "keybtn"; b.innerHTML = keySVG(k[0]); b.setAttribute("aria-label", k[1] + " key");
+      b.addEventListener("click", () => {
+        if(b.disabled) return;
+        if(j === winner){ [...box.children].forEach(x => x.disabled = true); b.classList.add("yes"); happy(); res(); }
+        else { b.disabled = true; b.classList.add("no"); oops(); $("finPrompt").textContent = "Not that one! Try another key."; }
+      });
+      box.appendChild(b);
+    });
+  });
+
+  $("finPrompt").textContent = "Click! The key fits!";
+  await wait(900);
+  show("keys", false); show("finPrompt", false);
+  if(!reduced) chest.classList.add("shake");
+  tone([196, 175], "triangle", 0.12);
+  await wait(reduced ? 200 : 900);
+  chest.classList.remove("shake");
+  f.classList.add("open");
+  fanfare(); burst(70); coinRain(80); jingle(14);
+  await wait(1800);
+  coinRain(60); jingle(10);
+  await wait(1200);
+  show("finText", true); show("finActions", true);
+}
+
+/* ---------- Start up ---------- */
+const sayPrompt = () => say(rounds[idx].speak ?? rounds[idx].target[0]);
+$("word").addEventListener("click", sayPrompt);
+$("hear").addEventListener("click", sayPrompt);
+$("homeBtn").addEventListener("click", goHome);
+$("qHome").addEventListener("click", goHome);
+$("againBtn").addEventListener("click", () => startJourney(mode));
+$("levelsBtn").addEventListener("click", goHome);
+
+buildLevelButtons();
+setSteps(CONFIG.rounds);

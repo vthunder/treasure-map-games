@@ -3,7 +3,7 @@
 //   node tools/look.mjs <levelId>       -> intro.png, map.png (map at the first stop), question.png, chest.png (chest open)
 //   node tools/look.mjs --pictures a,b  -> pictures.png (those IMG pictures with labels; "all" = every one)
 // Files go to tools/out/. LOOK_SIZE=1280x720 sets the window size (default 800x900);
-// LOOK_SCHEME=dark renders the dark color scheme (default light). Open them with the Read tool to look at them.
+// LOOK_SCHEME=dark renders the dark color scheme (default light). GAME=variants/<name> picks a game (default base). Open them with the Read tool to look at them.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { openBrowser, fail, ROOT } from "./browser.mjs";
@@ -17,7 +17,7 @@ const errorsOf = b => b.evaluate(`JSON.stringify(window.__errors||[])`);
 
 if (args[0] === "--pictures") {
   const b = await openBrowser({ width: 900, height: 700 });
-  await b.open(`/index.html?pictures=${encodeURIComponent(args[1] || "all")}`);
+  await b.open(`/${process.env.GAME || "base"}/index.html?pictures=${encodeURIComponent(args[1] || "all")}`);
   const h = await b.waitFor(`window.__picturesHeight || null`, 15000);
   if (!h) fail("picture sheet did not render: " + await errorsOf(b));
   await b.send("Emulation.setDeviceMetricsOverride", { width: 900, height: Math.max(200, h), deviceScaleFactor: 1, mobile: false });
@@ -28,7 +28,7 @@ if (args[0] === "--pictures") {
   const level = args[0];
   const [w, h] = (process.env.LOOK_SIZE || "800x900").split("x").map(Number);
   const b = await openBrowser({ width: w, height: h, scheme: process.env.LOOK_SCHEME || "light" });
-  await b.open(`/index.html?look=${encodeURIComponent(level || "")}`);
+  await b.open(`/${process.env.GAME || "base"}/index.html?look=${encodeURIComponent(level || "")}`);
   if (!await b.waitFor(`document.title === "LOOK intro" || document.title === "LOOK error"`, 15000)) fail("page did not load");
   await save(b, "intro.png");
   if (level) {

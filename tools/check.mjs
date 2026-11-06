@@ -6,7 +6,7 @@ const levels = process.argv[2] || "all";
 const LIMIT_MS = 120000;
 const b = await openBrowser();
 const t0 = Date.now();
-await b.open(`/index.html?selftest=${encodeURIComponent(levels)}`);
+await b.open(`/${process.env.GAME || "base"}/index.html?selftest=${encodeURIComponent(levels)}`);
 const raw = await b.waitFor(`(document.getElementById("selftest-result")||{}).textContent || null`, LIMIT_MS);
 if (!raw) {
   const errs = await b.evaluate(`JSON.stringify(window.__errors||[])`);

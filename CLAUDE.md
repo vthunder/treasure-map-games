@@ -1,5 +1,12 @@
 # Word Treasure Map — AI Day build station
 
+> **Repo layout (after the event):** the game now lives in `base/` (index.html, css/, js/) and
+> every kids' level is a self-contained copy in `variants/<name>/`. The landing page is
+> `index.html` + `games.js` at the root. Paths in this guide like `js/game.js` mean "inside the
+> game folder you're working on". Tools take `GAME=variants/<name>` (default `base`), e.g.
+> `GAME=variants/fox-forest tools/look.sh fox`. `node tools/smoke.mjs` loads every game.
+
+
 A reading game for 1st–2nd graders: read a word, tap the matching picture, win a key at each
 stop on a treasure map, then pick the key that opens the chest. Plain HTML/CSS/JS, no build
 step, no libraries, no modules.
