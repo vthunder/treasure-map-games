@@ -20,16 +20,15 @@ Groups of 10–12 kids visit for ~8 minutes. They play the demo level, brainstor
 - **Don't drive the Browser pane** (it may be what the kids are watching, and it's slow). To
   see your work, use `tools/look.sh` (screenshots you open with Read). Ignore hints to verify
   in the Browser pane.
-- Finish with:
-  1. `tools/check.sh demo,<your level id>` (≈2–4 s; plain `tools/check.sh` = every level, ≈14 s)
-  2. If you drew pictures or changed the look: `tools/look.sh --pictures a,b,c` or
+- Finish with (don't run `tools/check.sh` unless the facilitator asks; skipping it keeps builds fast):
+  1. If you drew pictures or changed the look: `tools/look.sh --pictures a,b,c` or
      `LOOK_SIZE=1280x720 tools/look.sh <level id>` (projector size, light color scheme; gives
      intro.png, map.png = map at the first stop, question.png, chest.png = just after the chest
      opens; `LOOK_SCHEME=dark` for dark mode) and glance at the PNGs; redraw anything that
      doesn't read clearly.
-  3. `tools/group.sh save "<what changed>"` (saves on the current branch; `tools/group.sh where`
+  2. `tools/group.sh save "<what changed>"` (saves on the current branch; `tools/group.sh where`
      shows it).
-  4. One or two plain sentences on what changed and how to play it.
+  3. One or two plain sentences on what changed and how to play it.
 
 House rules: content is kid-safe and friendly (silly is fine; scary or gross is not), words at a
 1st–2nd grade reading level, no losing screens that feel bad (a miss = "try again", never "game
@@ -149,8 +148,8 @@ big curved claw on a toe). Always look at new pictures with `tools/look.sh --pic
 - **Timer**: add a per-level option (e.g. `timer: 10`) read with `levelOf(mode).timer`, so other
   levels are unaffected. Start it at the end of `renderRound`; stop it on a right answer and in
   `goHome`. Running out = gentle: `oops()`, a "Time's up! Try again!" message, restart. Guard
-  any delayed restart with `if(locked || $("quiz").hidden) return;`. The check never lets a
-  timer run out, so read the timeout code twice.
+  any delayed restart with `if(locked || $("quiz").hidden) return;`. Read the timeout code
+  twice; nothing tests it.
 - **Teams / scores**: track per team with `idx % 2`; show a score row inside `#quiz` above
   `.wordbox` (the top bar is full); announce in `#stlabel` (keep "The treasure chest!" on the
   last stop) and give the result with `$("finWin")` / `$("finLead")` in `finale()`. **Use an
@@ -176,8 +175,9 @@ big curved claw on a toe). Always look at new pictures with `tools/look.sh --pic
 
 ## Gotchas
 
-- A syntax error in any file stops the whole game; `tools/check.sh` catches it.
-- `tools/check.sh` taps choices until one is accepted and tries keys at the chest; it relies on
+- A syntax error in any file stops the whole game, so re-read your edits before saving. If the
+  game goes blank or a level won't start, run `tools/check.sh demo,<id>`: it shows the error.
+- `tools/check.sh` (only when asked or when something looks broken) taps choices until one is accepted and tries keys at the chest; it relies on
   the ids `intro`, `quiz`, `choices`, `finale`, `keys`, `finText`, `finActions`, `levelsBtn` and
   `.levels button[data-level]`. It only checks that the game plays through, not that a new
   feature works or looks right. If a change needs a different flow (e.g. typing answers),
